@@ -76,7 +76,7 @@ def process(inFile,outFile):
                 gisticValue = 0
             df1.at[idx,'call'] = call
             df1.at[idx,'gisticValue'] = gisticValue
-            df1.at[idx,'id'] = '_'.join([sample,gene,call])
+            df1.at[idx,'id'] = '__'.join([sample,gene,call])
 
         df1a = df1[['id','sample','gene','avgLogRatio','call','gisticValue']]
         df1a.to_csv(outFile,index = False, sep='\t')

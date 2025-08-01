@@ -258,7 +258,7 @@ def parseMutation(rowDict,outDir):
 
 # parse cnv row
 def parseCNV(rowDict,outDir):
-    header = ['sample','gene','type','call']    
+    header = ['id','sample','gene','type','call']    
 
     # find the call by considering calls that have been previously used
     tmpCall = [rowDict[field] for field in rowDict.keys() if (rowDict[field] in ['amplification','focal copy loss','single copy copy loss','single copy loss','focal copy gain','loss','biallelic loss'] or 'LOH' in rowDict[field] or 'del' in rowDict[field] or 'bi-allelic' in rowDict[field] or 'gain' in rowDict[field] or 'copy loss' in rowDict[field]) and field != 'clinical report']
@@ -297,6 +297,9 @@ def parseCNV(rowDict,outDir):
         rowDict['gene'] = rowDict['gene'].replace(' ','')
         rowDict['gene'] = re.sub('[(].*[)]','',rowDict['gene'])
 
+    rowDict['gene'] = rowDict['gene'].strip()
+    rowDict['id'] = '__'.join([rowDict['sample'],rowDict['gene'],rowDict['call']])
+        
     # write the parsed line
     outFile1 = outDir + '/report-cnvs.txt'    
     with open(outFile1,'a') as out1:
@@ -389,7 +392,7 @@ def initOutput(outDir):
     # cnv file
     outFile1 = outDir + '/report-cnvs.txt'    
     with open(outFile1,'w') as out1:
-        header = ['sample','gene','type','call']
+        header = ['id','sample','gene','type','call']
         out1.write('\t'.join(header) + '\n')
 
     # fusion file
