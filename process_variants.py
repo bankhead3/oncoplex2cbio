@@ -5,6 +5,13 @@
 import os,pysam,re
 import pandas as pd
 
+inFile1 = 'oncoplex2cbio/annotation/oncoplex-genes.txt'
+df = pd.read_csv(inFile1,sep="\t")
+genes = list(df['gene'])
+genes = dict(zip(genes,genes))
+genesX = list(df[(df['chrom'] == 'chrX')]['gene'])
+genesX = dict(zip(genesX,genesX))
+
 # *** process ***
 def process(inFile,outFile):
 
@@ -26,18 +33,17 @@ def process(inFile,outFile):
         idx4 = (~df1['clinvar'].str.contains('benign',case = False))
         idx5 = (df1['VAF'] > 0.03)
         idx6 = (df1['filterRealVariant'] == True)
-        df1a = df1[idx1 & idx2 & idx3 & idx4 & idx5 & idx6].copy()
         # **
 
-        idx1 = (df1a['sheet'] == 'Clinically Flagged') & (df1a['clinvar'].str.contains('pathogenic',case=False)) & (~df1a['clinvar'].str.contains('conflicting',case=False))
-        idx2 = (df1a['sheet'] == 'Small Variants')
-        df1b = df1a[idx1 | idx2].copy()
+        idx7 = (df1['sheet'] == 'Clinically Flagged') & (df1['clinvar'].str.contains('pathogenic',case=False)) & (~df1['clinvar'].str.contains('conflicting',case=False))
+        idx8 = (df1['AD'] > 5)
+        df1a = df1[(idx1 & idx2 & idx3 & idx4 & idx5 & idx6) | (idx5 & idx7 & idx8)].copy()
     
         # get rid of duplicates from small variants and clinically flagged
-        df1c = df1b.drop_duplicates(subset=['id'],keep = 'first')
-        df1c.to_csv(outFile,index = False, sep="\t")
+        df1b = df1a.drop_duplicates(subset=['id'],keep = 'first')
+        df1b.to_csv(outFile,index = False, sep="\t")
 
-        return df1c  # for troubleshooting
+        return df1b  # for troubleshooting
 
     # ** cnvs **
     elif 'cnv' in inFile:
@@ -56,16 +62,20 @@ def process(inFile,outFile):
         for idx,row in df1.iterrows():
 
             value = df1.iloc[idx]['avgLogRatio']
+            value = value if value == 'NA' else float(value)
+            absMax = df1.iloc[idx]['maxAbsLogRatio']
+            absMax = absMax if absMax == 'NA' else float(absMax)
             sample = str(df1.iloc[idx]['sample'])
             gene = df1.iloc[idx]['gene']
 
+            # thresholds based on interactions with Saji Hassan
             if value >= 1:
                 call = 'AMP'
                 gisticValue = 2
-            elif value >= 0.4:
+            elif value >= 0.6:   
                 call = 'GAIN'
                 gisticValue = 1
-            elif value <= -1.3:
+            elif value <= -1.3 or (value <= -1 and absMax > 3):
                 call = 'HOMODEL'
                 gisticValue = -2
             elif value <= -0.4:
@@ -78,7 +88,7 @@ def process(inFile,outFile):
             df1.at[idx,'gisticValue'] = gisticValue
             df1.at[idx,'id'] = '__'.join([sample,gene,call])
 
-        df1a = df1[['id','sample','gene','avgLogRatio','call','gisticValue']]
+        df1a = df1[['id','sample','gene','avgLogRatio','maxAbsLogRatio','call','gisticValue']]
         df1a.to_csv(outFile,index = False, sep='\t')
     # **
 

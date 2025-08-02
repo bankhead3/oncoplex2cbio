@@ -5,6 +5,11 @@ import pandas as pd
 import re
 import openpyxl as op
 
+inFile1 = 'oncoplex2cbio/annotation/oncoplex-genes.txt'
+df2 = pd.read_csv(inFile1,sep="\t")
+genes = list(df2['gene'])
+genes = dict(zip(genes,genes))
+
 # starting point for parsing reports
 def parse(inFile,outDir):
     # make a home for new data tables
@@ -299,7 +304,11 @@ def parseCNV(rowDict,outDir):
 
     rowDict['gene'] = rowDict['gene'].strip()
     rowDict['id'] = '__'.join([rowDict['sample'],rowDict['gene'],rowDict['call']])
-        
+
+    # don't write if the gene is not a valid gene
+    if rowDict['gene'] not in genes:
+        return
+    
     # write the parsed line
     outFile1 = outDir + '/report-cnvs.txt'    
     with open(outFile1,'a') as out1:

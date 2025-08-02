@@ -31,7 +31,7 @@ def parseV8_0(inFile, outDir, sample):
     with open(outFile1,'w') as out1:
         
         # write yo header
-        header = ['sample','gene','avgLogRatio']
+        header = ['sample','gene','avgLogRatio','maxAbsLogRatio']
         out1.write('\t'.join(header) + '\n')
         
         df1 = pd.read_excel(inFile,sheet_name = 'Copy Number by Gene', keep_default_na = False, na_values = ['NA'])
@@ -47,6 +47,11 @@ def parseV8_0(inFile, outDir, sample):
 
             record['gene'] = rowDict['gene']
             record['avgLogRatio'] = float(rowDict['gene average'])
+
+            if rowDict['exon abs max'] != '':
+                record['maxAbsLogRatio'] = float(rowDict['exon abs max'])
+            else:
+                record['maxAbsLogRatio'] = 'NA'
                 
             # write yo line out yo
             lineOut = []

@@ -1,0 +1,6 @@
+20250612 arb
+copied and pasted gene list from https://testguide.labmed.uw.edu/view/OPX for oncoplexGeneWebCopy.txt
+
+20250605 arb
+wget https://ftp.ncbi.nlm.nih.gov/refseq/MANE/MANE_human/release_1.4/MANE.GRCh38.v1.4.summary.txt.gz
+gunzip MANE.GRCh38.v1.4.summary.txt.gz
