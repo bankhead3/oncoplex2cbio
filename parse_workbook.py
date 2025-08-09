@@ -31,7 +31,7 @@ def parseV8_0(inFile, outDir, sample):
     with open(outFile,'w') as out1:
         
         # write yo header
-        header = ['id','sample','gene1','gene2','location','caller','eventType','score','VAF','AD','DP','isQuiver','isMitelman','filterRealVariant','chrom1','pos1','chrom2','pos2','filter']
+        header = ['id','sample','gene1','gene2','location','caller','eventType','score','VAF','AD','DP','isQuiver','isMitelman','filterRealVariant','chrom1','pos1','chrom2','pos2','filter','reference']
         out1.write('\t'.join(header) + '\n')
 
         df1 = pd.read_excel(inFile,sheet_name = 'Intergene SVs', keep_default_na = False, na_values = ['NA'], skiprows = 2)
@@ -51,9 +51,18 @@ def parseV8_0(inFile, outDir, sample):
             record['isMitelman'] = True if rowDict['MITELMAN'] != '' else False            
             record['filterRealVariant'] = rowDict['FILTER: REAL VARIANT']
             record['caller'],record['filter'] = rowDict['caller'],rowDict['FILTER']
-            record['chrom1'],record['pos1'] = rowDict['Position1'].replace(',','').split(':')
-            record['chrom2'],record['pos2'] = rowDict['Position2'].replace(',','').split(':')
 
+            # source from hg19 to make cbio happy
+            record['reference'] = 'GRCh37'
+            if rowDict['hg19 Coordinates1'] != '':
+                record['chrom1'],record['pos1'] = rowDict['hg19 Coordinates1'].split(':')
+            else:
+                record['chrom1'],record['pos1'] = 'NA','NA'
+            if rowDict['hg19 Coordinates2'] != '':
+                record['chrom2'],record['pos2'] = rowDict['hg19 Coordinates2'].split(':')
+            else:
+                record['chrom2'],record['pos2'] = 'NA','NA'
+                
             # fix the order if needed
             # if tmprss2 erg then make sure order is correct
             if record['gene1'] in ['TMPRSS2','ERG'] and record['gene2'] in ['TMPRSS2','ERG']:
@@ -129,7 +138,7 @@ def parseV8_0(inFile, outDir, sample):
     outFile1 = outDir + '/mutations-' + sample + '.txt'
     with open(outFile1,'w') as out1:
         # write yo header
-        header = ['id','sample','sheet','mutationID','filter','gene','chrom','pos','ref','alt','hgvsP','hgvsC','consequence','transcript','VAF','AD','DP','gnomadFreq','uwFreq','COSMIC','clinvar','filterRealVariant']
+        header = ['id','sample','sheet','mutationID','filter','gene','chrom','pos','ref','alt','hgvsP','hgvsC','consequence','transcript','VAF','AD','DP','gnomadFreq','uwFreq','COSMIC','clinvar','filterRealVariant','reference']
         out1.write('\t'.join(header) + '\n')
 
         sheets = ['Small Variants','Clinically Flagged']
@@ -140,7 +149,11 @@ def parseV8_0(inFile, outDir, sample):
             for idx,row in df1.iterrows():
                 rowDict = row.to_dict()
                 record = {'sample':sample,'sheet':sheet}
-                record['chrom'],record['pos'] = re.sub('[:].*','',rowDict['Position (hg38)']),re.sub('.*[:]','',rowDict['Position (hg38)']).replace(',','')
+
+                # source from hg19 to make cbio happy
+                record['reference'] = 'GRCh37'
+                record['chrom'],record['pos'] = re.sub('[:].*','',rowDict['Position (hg19)']),re.sub('.*[:]','',rowDict['Position (hg19)']).replace(',','')                
+
                 record['ref'],record['alt'] = rowDict['ref'],rowDict['alt']
                 record['gene'],record['transcript'] = rowDict['Gene'],re.sub('[:].*','',rowDict['HGVSc'])
                 record['mutationID'] = '_'.join([record['chrom'],record['pos'],record['ref'],record['alt']])

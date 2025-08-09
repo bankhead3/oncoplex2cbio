@@ -117,12 +117,14 @@ def process(inFile,outFile):
                 chrom1 = df1a.iloc[idx]['chrom1']
                 chrom2 = df1a.iloc[idx]['chrom2']            
                 pos1 = df1a.iloc[idx]['pos1']
-                pos2 = df1a.iloc[idx]['pos2']            
-
-                if pos2 > pos1:
-                    svLength = pos2 - pos1 + 1
+                pos2 = df1a.iloc[idx]['pos2']
+                
+                if pd.isna(pos1) or pos1 == 'NA' or pd.isna(pos2) or pos2 == 'NA':
+                    svLength = 'NA'
+                elif pos2 > pos1:
+                    svLength = float(pos2) - float(pos1) + 1
                 else:
-                    svLength = pos1 - pos2 + 1
+                    svLength = float(pos1) - float(pos2) + 1
                 df1a.at[idx,'svLength'] = -1 if chrom1 != chrom2 else svLength
         # **
         

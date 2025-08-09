@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # generates cbioportal formatted files
 
-import os
+import os,re
 import pandas as pd
 
 def build(fileDict,outDir):
@@ -24,12 +24,32 @@ def build(fileDict,outDir):
         writeCnvs(fileDict['cnvs'],outDir)
     if 'svs' in fileDict:
         writeSvs(fileDict['svs'],outDir)
+    if 'panel' in fileDict:
+        writePanel(fileDict,outDir)            
 
     # write case lists
     if 'caseLists' in fileDict:
         writeCaseLists(fileDict,outDir)
 
+# *** write gene panel matrix data file ***
+def writePanel(fileDict,outDir):
+    # get all samples
+    df1 = pd.read_csv(fileDict['caseListIds'],sep="\t")
+    samples = sorted(list(df1[df1['caseList'] == 'all']['sample']))
 
+    lines = open(fileDict['panel']).read().splitlines()
+    panel = re.sub('.*[ ]','',lines[0])
+
+    outFile = outDir + '/data_gene_panel_matrix.txt'
+    with open(outFile,'w') as out1:
+        header = ['SAMPLE_ID','mutations','structural_variants']
+        out1.write('\t'.join(header) + '\n')
+
+        # for each sample
+        for sample in samples:
+            lineOut = [str(sample),panel,panel]
+            out1.write('\t'.join(lineOut) + '\n')
+    
 # *** write case list files ***
 def writeCaseLists(fileDict,outDir):
     
@@ -57,6 +77,7 @@ def writeCaseLists(fileDict,outDir):
             out1.write('stable_id: ' + groupDf['stable_id'].iloc[0] + '\n')
             out1.write('case_list_name: ' + groupDf['case_list_name'].iloc[0] + '\n')
             out1.write('case_list_description: ' + groupDf['case_list_description'].iloc[0] + '\n')
+            out1.write('case_list_category: ' + groupDf['case_list_category'].iloc[0] + '\n')
             out1.write(case_list_ids + '\n')
         
 # *** write metadata data header ***
@@ -148,8 +169,10 @@ def writeMutations(inFile,outDir):
             record = {'Chromosome':lineDict['chrom'].replace('chr','')}
             record['Start_Position'] = lineDict['pos']
             record['End_Position'] = lineDict['pos']
-            if len(lineDict['ref']) > 1:
+
+            if len(lineDict['ref']) > 1 and lineDict['pos'] != 'NA':
                 record['End_Position'] = str(int(lineDict['pos']) + len(lineDict['ref']) - 1)
+                
             record['Reference_Allele'] = lineDict['ref']
             record['Tumor_Seq_Allele2'] = lineDict['alt']
             record['Tumor_Sample_Barcode'] = lineDict['sample']
@@ -158,7 +181,7 @@ def writeMutations(inFile,outDir):
             record['t_ref_count'] = str(int(lineDict['DP']) - int(lineDict['AD']))
             record['t_alt_count'] = lineDict['AD']
             record['Hugo_Symbol'] = lineDict['gene']
-            record['NCBI_Build'] = 'GRCh38'  # this needs to be added to the mutation file for confirmatory purposes.
+            record['NCBI_Build'] = lineDict['reference']  # this needs to be added to the mutation file for confirmatory purposes.
             record['Variant_Classification'] = lineDict['consequence']
 
             # ** write yo output **
@@ -262,6 +285,9 @@ def writeMetas(inFile,outDir):
             writeMeta(group,df1,outFile)
         elif group == 'svs':
             outFile = outDir + 'meta_sv.txt'
+            writeMeta(group,df1,outFile)
+        elif group == 'panel':
+            outFile = outDir + 'meta_gene_panel_matrix.txt'
             writeMeta(group,df1,outFile)        
         else:
             raise 'i no understand'
