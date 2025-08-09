@@ -97,7 +97,7 @@ def parseV8_0(df1, outDir):
             print(rowDict)
             print('i no understand')
             raise
-        
+
         outFile1 = outDir + '/report-parse-log.txt'    
         with open(outFile1,'a') as out1:
             lineOut = [sample,str(idx+1),status]
@@ -319,7 +319,7 @@ def parseCNV(rowDict,outDir):
 
 # parse fusion row
 def parseFusion(rowDict,outDir):
-    header = ['sample','gene1','gene2']
+    header = ['id','sample','gene1','gene2']
 
     # rearrangement?
     gene = None
@@ -355,6 +355,29 @@ def parseFusion(rowDict,outDir):
     # write the parsed line
     outFile1 = outDir + '/report-fusions.txt'    
     with open(outFile1,'a') as out1:
+
+        rowDict['gene1'] = rowDict['gene1'].replace(' rearrangement','')
+        rowDict['gene2'] = rowDict['gene2'].replace(' rearrangement','')        
+        
+        # if tmprss2 erg then make sure order is correct
+        if rowDict['gene1'] in ['TMPRSS2','ERG'] and rowDict['gene2'] in ['TMPRSS2','ERG']:
+            if rowDict['gene1'] != 'TMPRSS2':
+                rowDict['gene1'] = 'TMPRSS2'
+                rowDict['gene2'] = 'ERG'
+        # otherwise alphabetical
+        elif rowDict['gene2'] < rowDict['gene1']:
+            tmp = rowDict['gene1']
+            rowDict['gene1'] = rowDict['gene2']
+            rowDict['gene2'] = tmp
+
+        # special cases for matching 
+        if rowDict['sample'] == '78819' and rowDict['gene1'] == 'MLH1':
+            rowDict['gene2'] = 'RYBP'
+        if rowDict['sample'] == '80232' and rowDict['gene2'] == 'PTEN':
+            rowDict['gene1'] = 'PARD3'
+
+        rowDict['id'] = '__'.join([rowDict['sample'],rowDict['gene1'],rowDict['gene2']])
+        
         lineOut = []
         for field in header:
             lineOut.append(rowDict[field])
@@ -407,7 +430,7 @@ def initOutput(outDir):
     # fusion file
     outFile1 = outDir + '/report-fusions.txt'    
     with open(outFile1,'w') as out1:
-        header = ['sample','gene1','gene2']
+        header = ['id','sample','gene1','gene2']
         out1.write('\t'.join(header) + '\n')
 
     # other file

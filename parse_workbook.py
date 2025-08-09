@@ -25,6 +25,69 @@ def parse(inFile,outDir,sample):
 # *** v8.0 oncoplex (arbitrarily 0) *** 
 def parseV8_0(inFile, outDir, sample):
 
+    # ** parse svs **
+    print('Intergene SVs')
+    outFile = outDir + '/svs-' + sample + '.txt'
+    with open(outFile,'w') as out1:
+        
+        # write yo header
+        header = ['id','sample','gene1','gene2','location','caller','eventType','score','VAF','AD','DP','isQuiver','isMitelman','filterRealVariant','chrom1','pos1','chrom2','pos2','filter']
+        out1.write('\t'.join(header) + '\n')
+
+        df1 = pd.read_excel(inFile,sheet_name = 'Intergene SVs', keep_default_na = False, na_values = ['NA'], skiprows = 2)
+
+        for idx,row in df1.iterrows():
+            rowDict = row.to_dict()        
+            
+            # assemble line from row read
+            record = {'sample':sample}
+
+            record['gene1'],record['gene2'] = rowDict['Gene1'],rowDict['Gene2']
+            record['eventType'] = rowDict['Event Type']
+            record['score'] = rowDict['QUAL']
+            record['VAF'],record['AD'] = rowDict['VAF'],int(rowDict['ALT Fragments'])
+            record['DP'] = record['AD'] + int(rowDict['REF Fragments'])
+            record['isQuiver'] = True if rowDict['QUIVER'] != '' else False
+            record['isMitelman'] = True if rowDict['MITELMAN'] != '' else False            
+            record['filterRealVariant'] = rowDict['FILTER: REAL VARIANT']
+            record['caller'],record['filter'] = rowDict['caller'],rowDict['FILTER']
+            record['chrom1'],record['pos1'] = rowDict['Position1'].replace(',','').split(':')
+            record['chrom2'],record['pos2'] = rowDict['Position2'].replace(',','').split(':')
+
+            # fix the order if needed
+            # if tmprss2 erg then make sure order is correct
+            if record['gene1'] in ['TMPRSS2','ERG'] and record['gene2'] in ['TMPRSS2','ERG']:
+                if record['gene1'] != 'TMPRSS2':
+                    record['gene1'] = 'TMPRSS2'
+                    record['gene2'] = 'ERG'
+
+                    tmp = record['pos1']
+                    record['pos1'] = record['pos2']
+                    record['pos2'] = tmp
+                    
+            # otherwise alphabetical
+            elif record['gene2'] < record['gene1'] and record['gene2'] != 'Intergenic':
+                tmp = record['gene1']
+                record['gene1'] = record['gene2']
+                record['gene2'] = tmp
+
+                tmp = record['chrom1']
+                record['chrom1'] = record['chrom2']
+                record['chrom2'] = tmp
+                
+                tmp = record['pos1']
+                record['pos1'] = record['pos2']
+                record['pos2'] = tmp
+
+            record['id'] = '__'.join([record['sample'],record['gene1'],record['gene2']])
+            record['location'] = '_'.join([record['chrom1'],record['pos1'],record['chrom2'],record['pos2']])
+            
+            # write it yo
+            lineOut = []
+            for field in header:
+                lineOut.append(str(record[field]))
+            out1.write('\t'.join(lineOut) + '\n')
+                
     # ** parse cnvs **
     print('Copy Number by Gene')
     outFile1 = outDir + '/cnvs-' + sample + '.txt'

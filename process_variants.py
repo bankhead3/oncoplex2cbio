@@ -26,6 +26,7 @@ def process(inFile,outFile):
         df1 = pd.read_csv(inFile,sep="\t",keep_default_na = False)
 
         # ** filtering criteria **
+        idx0 = (df1['sheet'] == 'Small Variants')
         idx1 = (df1['gnomadFreq'] == 'NA') | (pd.to_numeric(df1['gnomadFreq'],errors='coerce') < 0.001)
         idx2 = (df1['uwFreq'] < 0.05)  # internal frequency database
         consequences = ["coding", "frameshift", "inframe", "missense", "splicing-canonical", "start/stop"]    
@@ -37,7 +38,7 @@ def process(inFile,outFile):
 
         idx7 = (df1['sheet'] == 'Clinically Flagged') & (df1['clinvar'].str.contains('pathogenic',case=False)) & (~df1['clinvar'].str.contains('conflicting',case=False))
         idx8 = (df1['AD'] > 5)
-        df1a = df1[(idx1 & idx2 & idx3 & idx4 & idx5 & idx6) | (idx5 & idx7 & idx8)].copy()
+        df1a = df1[(idx0 & idx1 & idx2 & idx3 & idx4 & idx5 & idx6) | (idx5 & idx7 & idx8)].copy()
     
         # get rid of duplicates from small variants and clinically flagged
         df1b = df1a.drop_duplicates(subset=['id'],keep = 'first')
@@ -92,6 +93,46 @@ def process(inFile,outFile):
         df1a.to_csv(outFile,index = False, sep='\t')
     # **
 
+    # ** svs **
+    elif 'svs' in inFile:
+        # create output directory if one is not already 
+        outDir = os.path.dirname(outFile)
+        if not os.path.exists(outDir):
+            os.makedirs(outDir, exist_ok=True)
+
+        # read variant file
+        df1 = pd.read_csv(inFile,sep="\t",keep_default_na = False)
+        df1['svLength'] = -1
+            
+        # ** filtering criteria **
+        idx1 = (df1['VAF'] > 0.008)
+        idx2 = (df1['score'] > 1500) | ((df1['score'] > 400) & (df1['isQuiver'] | df1['isMitelman']))
+        idx3 = (df1['filterRealVariant'] == True)
+        df1a = df1[idx1 & idx2 & idx3].copy()
+        df1a = df1a.reset_index(drop = True)
+
+        # ** add svLength **
+        if len(df1a) > 0:        
+            for idx,row in df1a.iterrows():
+                chrom1 = df1a.iloc[idx]['chrom1']
+                chrom2 = df1a.iloc[idx]['chrom2']            
+                pos1 = df1a.iloc[idx]['pos1']
+                pos2 = df1a.iloc[idx]['pos2']            
+
+                if pos2 > pos1:
+                    svLength = pos2 - pos1 + 1
+                else:
+                    svLength = pos1 - pos2 + 1
+                df1a.at[idx,'svLength'] = -1 if chrom1 != chrom2 else svLength
+        # **
+        
+        # get rid of duplicates
+        df1b = df1a.drop_duplicates(subset=['id'],keep = 'first')
+        df1b.to_csv(outFile,index = False, sep="\t")
+            
+        return df1b # for troubleshooting
+    # **
+        
     # **
     else:
         print('i no understand')

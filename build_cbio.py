@@ -22,6 +22,8 @@ def build(fileDict,outDir):
         writeMetaDatas(fileDict['metadata'],outDir)
     if 'cnvs' in fileDict:
         writeCnvs(fileDict['cnvs'],outDir)
+    if 'svs' in fileDict:
+        writeSvs(fileDict['svs'],outDir)
 
     # write case lists
     if 'caseLists' in fileDict:
@@ -63,16 +65,20 @@ def writeMetadataHeader(patientSample,df1a,outFile):
         if patientSample == 'patient':
             out1.write('\t'.join(['#Patient Identifier'] + list(df1a['name'])) + '\n')
             out1.write('\t'.join(['#Patient identifier'] + list(df1a['description'])) + '\n')
-            row3 = ['STRING' if tmp > 0 else '#STRING' for tmp in range(df1a.shape[0] + 1)]
+            # datatype row
+            row3 = ['#STRING'] + list(df1a['dataType'])            
             out1.write('\t'.join(row3) + '\n')
+            
             row4 = ['1' if tmp > 0 else '#1' for tmp in range(df1a.shape[0] + 1)] 
             out1.write('\t'.join(row4) + '\n')
             out1.write('\t'.join(['PATIENT_ID'] + list(df1a['property'])) + '\n')
         elif patientSample == 'sample':
             out1.write('\t'.join(['#Patient Identifier'] + list(df1a['name'])) + '\n')
             out1.write('\t'.join(['#Patient identifier'] + list(df1a['description'])) + '\n')
-            row3 = ['STRING' if tmp > 0 else '#STRING' for tmp in range(df1a.shape[0] + 1)]
+            # datatype row
+            row3 = ['#STRING'] + list(df1a['dataType'])
             out1.write('\t'.join(row3) + '\n')
+
             row4 = ['1' if tmp > 0 else '#1' for tmp in range(df1a.shape[0] + 1)] 
             out1.write('\t'.join(row4) + '\n')
             out1.write('\t'.join(['PATIENT_ID'] + list(df1a['property'])) + '\n')
@@ -164,6 +170,36 @@ def writeMutations(inFile,outDir):
 
 # ***    
 
+# *** write svs file ***
+def writeSvs(inFile,outDir):
+    
+    outFile = outDir + 'data_sv.txt'
+    df1 = pd.read_csv(inFile,sep="\t")
+
+    with open(outFile,'w') as out1:
+
+        # write yo header
+        header = ['Sample_Id','SV_Status','Site1_Hugo_Symbol','Site1_Chromosome','Site1_Position','Site2_Hugo_Symbol','Site2_Chromosome','Site2_Position','NCBI_Build','Class','SV_Length','Tumor_Variant_Count']
+        out1.write('\t'.join(header) + '\n')
+
+        # for each gene right a line
+        for idx,row in df1.iterrows():
+            lineDict = row.to_dict()
+
+            record = {'SV_Status':'SOMATIC','NCBI_Build':'GRCh38'}
+            record['Sample_Id'] = lineDict['sample']
+            record['Site1_Hugo_Symbol'],record['Site2_Hugo_Symbol'] = lineDict['gene1'],lineDict['gene2']
+            record['Site1_Chromosome'],record['Site1_Position'] = lineDict['chrom1'],lineDict['pos1']
+            record['Site2_Chromosome'],record['Site2_Position'] = lineDict['chrom2'],lineDict['pos2']
+            record['Class'] = lineDict['eventType']
+            record['SV_Length'],record['Tumor_Variant_Count'] = lineDict['svLength'],lineDict['AD']
+
+            lineOut = []
+            for field in header:
+                lineOut.append(record[field])
+            lineOut = [str(field) for field in lineOut]
+            out1.write('\t'.join(lineOut) + '\n')
+# ***    
 
 # *** write cnvs file ***
 def writeCnvs(inFile,outDir):
@@ -223,6 +259,9 @@ def writeMetas(inFile,outDir):
         # write meta_clinical_sample.txt
         elif group == 'cnvs':
             outFile = outDir + 'meta_cna.txt'
+            writeMeta(group,df1,outFile)
+        elif group == 'svs':
+            outFile = outDir + 'meta_sv.txt'
             writeMeta(group,df1,outFile)        
         else:
             raise 'i no understand'

@@ -2,13 +2,16 @@
 # parser for metadata recieved 
 
 import os
+import pandas as pd
+import pyxlsb
+import re
 
 def parse(files,outFile):
     
     # create a table with the following
     # patient, sample, field 
     with open(outFile,'w') as out1:
-        outHeader = ['id','patientSample','property','value','description','name','patientID']
+        outHeader = ['id','patientSample','property','value','description','name','patientID','dataType']
         out1.write('\t'.join(outHeader) + '\n')
     
     records = {}
@@ -18,12 +21,73 @@ def parse(files,outFile):
         if basename == 'data_clinical_patient.txt':
             parseClinicalPatient(file,outFile,outHeader,'patient')
         elif basename == 'data_clinical_sample.txt':
-            parseClinicalPatient(file,outFile,outHeader,'sample')            
+            parseClinicalPatient(file,outFile,outHeader,'sample')
+        elif 'xlsm' in basename:
+            parseWorkbook(file,outFile,outHeader)            
         else:
             print('i no unerstand file')
             raise
-            
+
+# parse sample metadata from workbook
+def parseWorkbook(inFile,outFile,outHeader):
+    df1 = pd.read_excel(inFile,sheet_name = 'Info',keep_default_na = False, na_values = ['NA'],skiprows = 1,header=None,nrows=100,dtype=str)
+
+    isTmbNext = False
+    tmb = False
+    isMsiNext = False
+    msi = False
+    with open(outFile,'a') as out1:
+        for idx,row in df1.iterrows():
+            rowDict = row.to_dict()
+
+            # get sample and patient ID
+            if idx == 0:
+                sampleID = rowDict[1]
+                sample = 'sample' + re.sub('_.*','',sampleID)
+                patientID = 'patient' + str(sample)
+                lineDict = {'id':sample,'patientID':patientID,'patientSample':'sample'}
         
+            # get tmb
+            if rowDict[7] == 'TMB':
+                isTmbNext = True
+            elif isTmbNext == True:
+                tmb = rowDict[8]
+                lineDict['value'] = tmb
+                lineDict['property'] = 'TMB'
+                lineDict['name'] = 'TMB'
+                lineDict['description'] = '# mutations/MB'
+                lineDict['dataType'] = 'NUMBER'                
+                
+                # write it yo
+                lineOut = []
+                for field in outHeader:
+                    lineOut.append(lineDict[field])
+                lineOut = [str(field) for field in lineOut]                    
+                out1.write('\t'.join(lineOut) + '\n')
+                
+                isTmbNext = False
+
+            # get msi
+            if rowDict[7] == 'MSI':
+                isMsiNext = True
+            elif isMsiNext == True:
+                msi = rowDict[8]
+
+                msi = rowDict[8]
+                lineDict['value'] = msi
+                lineDict['property'] = 'MSI'
+                lineDict['name'] = 'MSI Status'
+                lineDict['description'] = 'MSI Status'
+                lineDict['dataType'] = 'STRING'
+                
+                # write it yo
+                lineOut = []
+                for field in outHeader:
+                    lineOut.append(lineDict[field])
+                lineOut = [str(field) for field in lineOut]
+                out1.write('\t'.join(lineOut) + '\n')
+                
+                isMsiNext = False
 
 # parse data_clinical_patient.txt data
 def parseClinicalPatient(inFile,outFile,outHeader,patientSample):
@@ -68,6 +132,7 @@ def parseClinicalPatient(inFile,outFile,outHeader,patientSample):
                 lineDict['description'] = descDict[property]                
                 lineDict['patientSample'] = patientSample
                 lineDict['patientID'] = patientID
+                lineDict['dataType'] = 'STRING'                
                 lineOut = []
                 for field in outHeader:
                     lineOut.append(lineDict[field])
