@@ -34,11 +34,13 @@ def process(inFile,outFile):
         idx4 = (~df1['clinvar'].str.contains('benign',case = False))
         idx5 = (df1['VAF'] > 0.03)
         idx6 = (df1['filterRealVariant'] == True)
+        idx10 = (df1['AD'] > 12)  
         # **
 
         idx7 = (df1['sheet'] == 'Clinically Flagged') & (df1['clinvar'].str.contains('pathogenic',case=False)) & (~df1['clinvar'].str.contains('conflicting',case=False))
-        idx8 = (df1['AD'] > 5)
-        df1a = df1[(idx0 & idx1 & idx2 & idx3 & idx4 & idx5 & idx6) | (idx5 & idx7 & idx8)].copy()
+        idx8 = (df1['AD'] > 12)  # was 5 based on macro filters
+        idx9 = (df1['uwFreq'] < 0.1)  # based on most frequent mutations in cancer ~5%
+        df1a = df1[(idx0 & idx1 & idx2 & idx3 & idx4 & idx5 & idx6 & idx10) | (idx5 & idx7 & idx8 & idx9)].copy()
     
         # get rid of duplicates from small variants and clinically flagged
         df1b = df1a.drop_duplicates(subset=['id'],keep = 'first')
