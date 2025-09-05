@@ -103,7 +103,7 @@ def parseV8_0(inFile, outDir, sample):
     with open(outFile1,'w') as out1:
         
         # write yo header
-        header = ['sample','gene','avgLogRatio','maxAbsLogRatio']
+        header = ['sample','gene','avgLogRatio','maxAbsLogRatio','del3ExonValue','gain3ExonValue']
         out1.write('\t'.join(header) + '\n')
         
         df1 = pd.read_excel(inFile,sheet_name = 'Copy Number by Gene', keep_default_na = False, na_values = ['NA'])
@@ -114,12 +114,41 @@ def parseV8_0(inFile, outDir, sample):
             if not rowDict['FILTER: GENE ORDERED']:
                 continue
             # **
-            
-            record = {'sample':sample}
 
+            # get exons into a list numeric form
+            # warning: top exon number is hard coded
+            exons = [field for field in rowDict.keys() if field.isdigit()]
+            values = [rowDict[exon] for exon in exons if rowDict[exon] != '']
+            print(values)
+            print(len(values))
+
+            # ** sliding window to identify focal events spanning 3 consecutive exons **
+            def slide(values,num):
+
+                if num > len(values) or len(values) == 0:
+                    return ['NA','NA']
+                
+                gainWindowGlobal = min(values)
+                delWindowGlobal = max(values)
+                
+                for i in range(len(values) - num + 1):
+                    window = values[i:(i + num)]
+                    maxWindow = max(window)
+                    minWindow = min(window)
+
+                    if minWindow > gainWindowGlobal:
+                        gainWindowGlobal = minWindow
+                    if maxWindow < delWindowGlobal:
+                        delWindowGlobal = maxWindow
+                        
+                return [delWindowGlobal,gainWindowGlobal]
+            # ** 
+            del3ExonValue,gain3ExonValue = slide(values,3)
+            
+            record = {'sample':sample,'del3ExonValue':del3ExonValue,'gain3ExonValue':gain3ExonValue}
             record['gene'] = rowDict['gene']
             record['avgLogRatio'] = float(rowDict['gene average'])
-
+            
             if rowDict['exon abs max'] != '':
                 record['maxAbsLogRatio'] = float(rowDict['exon abs max'])
             else:
