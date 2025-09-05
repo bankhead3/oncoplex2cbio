@@ -59,13 +59,18 @@ def process(inFile,outFile):
         df1 = pd.read_csv(inFile,sep="\t",keep_default_na = False)
 
         df1['call'] = 'NA'
-        df1['id'] = 'NA'        
+        df1['id'] = 'NA'
+        df1['umbrellaID'] = 'NA'                
         df1['gisticValue'] = -10
 
         for idx,row in df1.iterrows():
 
             value = df1.iloc[idx]['avgLogRatio']
             value = value if value == 'NA' else float(value)
+            del3 = df1.iloc[idx]['del3ExonValue']
+            del3 = del3 if del3 == 'NA' else float(del3)
+            gain3 = df1.iloc[idx]['gain3ExonValue']
+            gain3 = gain3 if gain3 == 'NA' else float(gain3)
             absMax = df1.iloc[idx]['maxAbsLogRatio']
             absMax = absMax if absMax == 'NA' else float(absMax)
             sample = str(df1.iloc[idx]['sample'])
@@ -78,10 +83,16 @@ def process(inFile,outFile):
             elif value >= 0.6:   
                 call = 'GAIN'
                 gisticValue = 1
-            elif value <= -1.3 or (value <= -1 and absMax > 3):
+            elif value <= -1.3 or (value <= -1 and absMax > 3):  # focal homodels
                 call = 'HOMODEL'
                 gisticValue = -2
             elif value <= -0.4:
+                call = 'DEL'
+                gisticValue = -1
+            elif gain3 != 'NA' and value > 0 and gain3 >= 0.6:  # catch focal gain or amp events 
+                call = 'GAIN'
+                gisticValue = 1
+            elif del3 != 'NA' and value < 0 and del3 <= -0.4:  # catch focal deletion events
                 call = 'DEL'
                 gisticValue = -1
             else:
@@ -91,7 +102,16 @@ def process(inFile,outFile):
             df1.at[idx,'gisticValue'] = gisticValue
             df1.at[idx,'id'] = '__'.join([sample,gene,call])
 
-        df1a = df1[['id','sample','gene','avgLogRatio','maxAbsLogRatio','call','gisticValue']]
+            # get umbrellaID
+            if call in ['AMP','GAIN']:
+                umbrellaCall = 'gain'
+            elif call in ['DEL','HOMODEL']:
+                umbrellaCall = 'loss'
+            else:
+                umbrellaCall = 'intact'
+            df1.at[idx,'umbrellaID'] = '__'.join([sample,gene,umbrellaCall])                 
+
+        df1a = df1[['id','umbrellaID','sample','gene','avgLogRatio','maxAbsLogRatio','call','gisticValue','del3ExonValue','gain3ExonValue']]
         df1a.to_csv(outFile,index = False, sep='\t')
     # **
 

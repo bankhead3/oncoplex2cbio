@@ -119,8 +119,6 @@ def parseV8_0(inFile, outDir, sample):
             # warning: top exon number is hard coded
             exons = [field for field in rowDict.keys() if field.isdigit()]
             values = [rowDict[exon] for exon in exons if rowDict[exon] != '']
-            print(values)
-            print(len(values))
 
             # ** sliding window to identify focal events spanning 3 consecutive exons **
             def slide(values,num):
