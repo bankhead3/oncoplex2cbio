@@ -130,7 +130,10 @@ def process(inFile,outFile):
         idx1 = (df1['VAF'] > 0.008)
         idx2 = (df1['score'] > 1500) | ((df1['score'] > 400) & (df1['isQuiver'] | df1['isMitelman']))
         idx3 = (df1['filterRealVariant'] == True)
-        df1a = df1[idx1 & idx2 & idx3].copy()
+        # group 0 are consider more likely to be FP by dlmp
+        idx4 = ((df1['group'] == 0) & (df1['isQuiver'] | df1['isMitelman'] | ~df1['id'].str.contains('Intergenic'))) | (df1['group'] != 0)
+        df1a = df1[idx1 & idx2 & idx3 & idx4].copy()
+
         df1a = df1a.reset_index(drop = True)
 
         # ** add svLength **
@@ -162,4 +165,3 @@ def process(inFile,outFile):
         print('i no understand')
         raise
     # **
-    

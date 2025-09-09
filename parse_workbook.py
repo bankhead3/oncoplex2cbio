@@ -31,7 +31,7 @@ def parseV8_0(inFile, outDir, sample):
     with open(outFile,'w') as out1:
         
         # write yo header
-        header = ['id','sample','gene1','gene2','location','caller','eventType','score','VAF','AD','DP','isQuiver','isMitelman','filterRealVariant','chrom1','pos1','chrom2','pos2','filter','reference']
+        header = ['id','sample','gene1','gene2','location','caller','eventType','score','VAF','AD','DP','isQuiver','isMitelman','filterRealVariant','chrom1','pos1','chrom2','pos2','filter','reference','group']
         out1.write('\t'.join(header) + '\n')
 
         df1 = pd.read_excel(inFile,sheet_name = 'Intergene SVs', keep_default_na = False, na_values = ['NA'], skiprows = 2)
@@ -45,6 +45,7 @@ def parseV8_0(inFile, outDir, sample):
             record['gene1'],record['gene2'] = rowDict['Gene1'],rowDict['Gene2']
             record['eventType'] = rowDict['Event Type']
             record['score'] = rowDict['QUAL']
+            record['group'] = rowDict['Group']
             record['VAF'],record['AD'] = rowDict['VAF'],int(rowDict['ALT Fragments'])
             record['DP'] = record['AD'] + int(rowDict['REF Fragments'])
             record['isQuiver'] = True if rowDict['QUIVER'] != '' else False
