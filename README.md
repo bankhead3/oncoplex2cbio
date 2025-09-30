@@ -8,3 +8,7 @@ Converts OncoPlex variants to cBioPortal format.
     1. process(inFile, outFile) - takes as input a mutation, cnv, or sv tab-delimited variant file and outputs an updated file
 3. build_cbio.py - writes mutation, metadata, cnv, sv, panel, and case list cbioportal files
     1. build(fileDict,outDir) - takes as input a python dictionary specifying file locations for mutation, metadata, cnv, sv, panel, and caseLists 
+
+## Requirements:
+1. oncoplex v8 excel workbooks
+2. python3
