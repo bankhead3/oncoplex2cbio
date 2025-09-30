@@ -1,0 +1,5 @@
+caseList	cancer_study_identifier	stable_id	case_list_name	case_list_description	case_list_category
+all	mixed_oncoplex_2025	mixed_oncoplex_2025_all	All Samples	All samples (13 samples)	all_cases_in_study
+cna	mixed_oncoplex_2025	mixed_oncoplex_2025_cna	All Samples profiled for CNVs	Samples profiled for CNVs (13 samples)	all_cases_with_cna_data
+mutation	mixed_oncoplex_2025	mixed_oncoplex_2025_sequenced	Samples profiled for mutations	Samples profiled for mutations (13 samples)	all_cases_with_mutation_data
+sv	mixed_oncoplex_2025	mixed_oncoplex_2025_sv	Samples profiled for SVs	Samples profiled for SVs (13 samples)	all_cases_with_sv_data

@@ -1,0 +1,44 @@
+group	parameter	value
+study	type_of_cancer	prad
+study	cancer_study_identifier	mixed_oncoplex_2025
+study	name	OncoPlex Pilot (Fred Hutch 2025)
+study	description	Pilot OncoPlex dataset.  Provide access to OncoPlex data from 13 research-consented prostate cancer samples.
+study	citation	Reference Disclaimer Here
+study	reference_genome	hg19
+study	groups	PUBLIC
+clinicalSample	cancer_study_identifier	mixed_oncoplex_2025
+clinicalSample	genetic_alteration_type	CLINICAL
+clinicalSample	datatype	SAMPLE_ATTRIBUTES
+clinicalSample	data_filename	data_clinical_sample.txt
+clinicalPatient	cancer_study_identifier	mixed_oncoplex_2025
+clinicalPatient	genetic_alteration_type	CLINICAL
+clinicalPatient	datatype	PATIENT_ATTRIBUTES
+clinicalPatient	data_filename	data_clinical_patient.txt
+mutations	cancer_study_identifier	mixed_oncoplex_2025
+mutations	genetic_alteration_type	MUTATION_EXTENDED
+mutations	datatype	MAF
+mutations	stable_id	mutations
+mutations	show_profile_in_analysis_tab	true
+mutations	profile_name	Mutations
+mutations	profile_description	Mutation data from OncoPlex targeted sequencing panel.
+mutations	data_filename	data_mutations.txt
+cnvs	cancer_study_identifier	mixed_oncoplex_2025
+cnvs	genetic_alteration_type	COPY_NUMBER_ALTERATION
+cnvs	datatype	DISCRETE
+cnvs	stable_id	gistic
+cnvs	show_profile_in_analysis_tab	true
+cnvs	profile_name	Copy number calls
+cnvs	profile_description	Copy number calls where 2 is AMP, 1 is GAIN, 0 is intact, -1 is DEL and -2 is HOMODEL based on thresholding of gene average log2 ratio values
+cnvs	data_filename	data_cna.txt
+svs	cancer_study_identifier	mixed_oncoplex_2025
+svs	genetic_alteration_type	STRUCTURAL_VARIANT
+svs	datatype	SV
+svs	stable_id	structural_variants
+svs	show_profile_in_analysis_tab	true
+svs	profile_name	Structural variants
+svs	profile_description	Structural Variant data from OncoPlex targeted sequencing panel.
+svs	data_filename	data_sv.txt
+panel	cancer_study_identifier	mixed_oncoplex_2025
+panel	genetic_alteration_type	GENE_PANEL_MATRIX
+panel	datatype	GENE_PANEL_MATRIX
+panel	data_filename	data_gene_panel_matrix.txt
