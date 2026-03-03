@@ -32,6 +32,7 @@ def build(fileDict,outDir):
         writeCaseLists(fileDict,outDir)
 
 # *** write gene panel matrix data file ***
+# temporarily updated to remove structural_variants
 def writePanel(fileDict,outDir):
     # get all samples
     df1 = pd.read_csv(fileDict['caseListIds'],sep="\t")
@@ -42,12 +43,12 @@ def writePanel(fileDict,outDir):
 
     outFile = outDir + '/data_gene_panel_matrix.txt'
     with open(outFile,'w') as out1:
-        header = ['SAMPLE_ID','mutations','structural_variants']
+        header = ['SAMPLE_ID','mutations']
         out1.write('\t'.join(header) + '\n')
 
         # for each sample
         for sample in samples:
-            lineOut = [str(sample),panel,panel]
+            lineOut = [str(sample),panel]
             out1.write('\t'.join(lineOut) + '\n')
     
 # *** write case list files ***
@@ -94,15 +95,15 @@ def writeMetadataHeader(patientSample,df1a,outFile):
             out1.write('\t'.join(row4) + '\n')
             out1.write('\t'.join(['PATIENT_ID'] + list(df1a['property'])) + '\n')
         elif patientSample == 'sample':
-            out1.write('\t'.join(['#Patient Identifier'] + list(df1a['name'])) + '\n')
-            out1.write('\t'.join(['#Patient identifier'] + list(df1a['description'])) + '\n')
+            out1.write('\t'.join(['#Patient Identifier','Sample Identifier'] + list(df1a['name'])) + '\n')
+            out1.write('\t'.join(['#Patient identifier', 'Sample Identifier'] + list(df1a['description'])) + '\n')
             # datatype row
-            row3 = ['#STRING'] + list(df1a['dataType'])
+            row3 = ['#STRING','STRING'] + list(df1a['dataType'])
             out1.write('\t'.join(row3) + '\n')
 
-            row4 = ['1' if tmp > 0 else '#1' for tmp in range(df1a.shape[0] + 1)] 
+            row4 = ['1' if tmp > 0 else '#1' for tmp in range(df1a.shape[0] + 2)] 
             out1.write('\t'.join(row4) + '\n')
-            out1.write('\t'.join(['PATIENT_ID'] + list(df1a['property'])) + '\n')
+            out1.write('\t'.join(['PATIENT_ID','SAMPLE_ID'] + list(df1a['property'])) + '\n')
             
 # *** write metadata data files ***
 def writeMetaDatas(inFile,outDir):
@@ -140,11 +141,12 @@ def writeMetaDatas(inFile,outDir):
             properties = list(groupDf['property'])
             values = list(groupDf['value'])
             lineDict = dict(zip(properties,values))
-            lineDict['patientID'] = list(groupDf['patientID'])[0]
+            lineDict['patientId'] = list(groupDf['patientId'])[0]
+            lineDict['sample'] = name
 
             # assemble and writ yo line out
             lineOut = []
-            for field in ['patientID'] + properties:
+            for field in ['patientId','sample'] + properties:
                 lineOut.append(lineDict[field])
             out1.write('\t'.join(lineOut) + '\n')
     # ***
@@ -165,7 +167,7 @@ def writeMutations(inFile,outDir):
         for line in in1:
             parse1 = line.strip().split('\t')
             lineDict = dict(zip(header,parse1))
-
+            
             record = {'Chromosome':lineDict['chrom'].replace('chr','')}
             record['Start_Position'] = lineDict['pos']
             record['End_Position'] = lineDict['pos']

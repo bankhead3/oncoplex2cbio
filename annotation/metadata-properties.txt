@@ -1,0 +1,10 @@
+property	name	description	dataType
+SEX	Sex	Male or female sex assigned at birth	STRING
+ONCOTREE_CODE	Oncotree code	Code standardizing cancer type diagnosis	STRING
+TEST	Test	OncoPlex test (e.g. OPX, OPXCT) used to profile	STRING
+VERSION	Version	Version (e.g. V7, V8) of OncoPlex test used to profile	STRING
+TISSUE_TYPE	Tissue Type	Type of patient tissue profiled (e.g. blood, primary, metastatic)	STRING
+TISSUE	Tissue	Tissue profiled (e.g. prostate, liver, bone)	STRING
+PIPELINE	Pipeline	OncoPlex data processing pipline used (e.g. TGC, TGC2)	STRING
+PATIENT	Patient	Non-PHI patient identifier associated with sample profiled	STRING
+DATE	Date	Date clinical report delivered.	STRING

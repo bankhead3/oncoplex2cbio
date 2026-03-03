@@ -6,12 +6,13 @@ def merge(files,outFile):
 
     # write yo file
     with open(outFile,'w') as out1:
-        # write header
+        # write header from first file
         file = files[0]
         with open(file) as in1:
             header = in1.readline()
             out1.write(header)
 
+        # write all files minus header
         for file in files:
             with open(file) as in1:
                 in1.readline()

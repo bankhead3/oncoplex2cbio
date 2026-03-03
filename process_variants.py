@@ -13,7 +13,7 @@ genesX = list(df[(df['chrom'] == 'chrX')]['gene'])
 genesX = dict(zip(genesX,genesX))
 
 # *** process ***
-def process(inFile,outFile):
+def process(inFile,outFile,overwrite=True):
 
     # ** mutation processing here ** 
     if 'mutation' in inFile:
@@ -25,8 +25,10 @@ def process(inFile,outFile):
         # read variant file
         df1 = pd.read_csv(inFile,sep="\t",keep_default_na = False)
 
+#        print(set(list(df1['sheet'])))
+        
         # ** filtering criteria **
-        idx0 = (df1['sheet'] == 'Small Variants')
+        idx0 = (df1['sheet'] == 'smallVariants')
         idx1 = (df1['gnomadFreq'] == 'NA') | (pd.to_numeric(df1['gnomadFreq'],errors='coerce') < 0.001)
         idx2 = (df1['uwFreq'] < 0.05)  # internal frequency database
         consequences = ["coding", "frameshift", "inframe", "missense", "splicing-canonical", "start/stop"]    
@@ -37,7 +39,7 @@ def process(inFile,outFile):
         idx10 = (df1['AD'] > 12)  
         # **
 
-        idx7 = (df1['sheet'] == 'Clinically Flagged') & (df1['clinvar'].str.contains('pathogenic',case=False)) & (~df1['clinvar'].str.contains('conflicting',case=False))
+        idx7 = (df1['sheet'] == 'clinicallyFlagged') & (df1['clinvar'].str.contains('pathogenic',case=False)) & (~df1['clinvar'].str.contains('conflicting',case=False))
         idx8 = (df1['AD'] > 12)  # was 5 based on macro filters
         idx9 = (df1['uwFreq'] < 0.1)  # based on most frequent mutations in cancer ~5%
         df1a = df1[(idx0 & idx1 & idx2 & idx3 & idx4 & idx5 & idx6 & idx10) | (idx5 & idx7 & idx8 & idx9)].copy()
