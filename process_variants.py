@@ -13,7 +13,7 @@ genesX = list(df[(df['chrom'] == 'chrX')]['gene'])
 genesX = dict(zip(genesX,genesX))
 
 # *** process ***
-def process(inFile,outFile,overwrite=True):
+def process(inFile,outFile):
 
     # ** mutation processing here ** 
     if 'mutation' in inFile:

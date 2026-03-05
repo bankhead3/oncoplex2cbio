@@ -19,7 +19,7 @@ def build(fileDict,outDir):
     if 'mutations' in fileDict:
         writeMutations(fileDict['mutations'],outDir)
     if 'metadata' in fileDict:
-        writeMetaDatas(fileDict['metadata'],outDir)
+        writeMetaDatas(fileDict['metadata'],outDir) 
     if 'cnvs' in fileDict:
         writeCnvs(fileDict['cnvs'],outDir)
     if 'svs' in fileDict:
@@ -243,6 +243,11 @@ def writeCnvs(inFile,outDir):
         # for each gene right a line
         for gene,df1a in df1.groupby('gene'):
 
+            # TEMPORARY FIX FOR MULTIPLE GENE PANELS
+            if df1a.shape[0] != len(samples):
+                print('skipping cnvs for ' + gene + '...')
+                continue
+            
             # order by samples
             df1b = df1a.set_index('sample')
             df1b = df1b.loc[samples]
@@ -251,6 +256,7 @@ def writeCnvs(inFile,outDir):
             lineOut = [gene] + values
             lineOut = [str(field) for field in lineOut]
             out1.write('\t'.join(lineOut) + '\n')
+
 # ***    
 
 # *** write meta files ***
