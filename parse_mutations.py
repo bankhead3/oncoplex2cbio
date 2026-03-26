@@ -17,7 +17,7 @@ def parse(fileDict,outDir,sample,version,pipeline,overwrite=False):
 
     # check if file exists
     if os.path.exists(outFile) and not overwrite:
-        print('mutations...skipped...',end='')
+        print('...mutations:skipped',end='')
         return
 
     with open(outFile,'w') as out1:
@@ -31,7 +31,7 @@ def parse(fileDict,outDir,sample,version,pipeline,overwrite=False):
         else:
             print('i no understant mutations for ' + pipeline + ' ' + version)
             raise
-    print('mutations...parsed...',end='')
+    print('...mutations:parsed',end='')
 
 # *** parse clinically flagged feather ***
 def parseClinicallyFlaggedFeather(fileDict, fileType, sample, out1, header):

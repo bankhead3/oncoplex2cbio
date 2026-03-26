@@ -16,7 +16,7 @@ def parse(fileDict,outDir,sample,version,pipeline,overwrite=False):
 
     # check if file exists
     if os.path.exists(outFile) and not overwrite:
-        print('cnvs...skipped',end='')
+        print('...cnvs:skipped',end='')
         return
 
     with open(outFile,'w') as out1:
@@ -29,7 +29,7 @@ def parse(fileDict,outDir,sample,version,pipeline,overwrite=False):
         else:
             print('i no understant cnvs for ' + pipeline + ' ' + version)
             raise
-    print('cnvs...parsed',end='')
+    print('...cnvs:parsed',end='')
 
 # *** parse clinically flagged feather ***
 def parseExcelv8(fileDict, fileType, sample, out1, header):

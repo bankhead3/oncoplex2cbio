@@ -125,7 +125,7 @@ def process(inFile,outFile):
             os.makedirs(outDir, exist_ok=True)
 
         # read variant file
-        df1 = pd.read_csv(inFile,sep="\t",keep_default_na = False)
+        df1 = pd.read_csv(inFile,sep="\t",keep_default_na = False,na_values = ['NA','nan'])
         df1['svLength'] = -1
             
         # ** filtering criteria **
@@ -147,8 +147,8 @@ def process(inFile,outFile):
                 pos2 = df1a.iloc[idx]['pos2']
                 
                 if pd.isna(pos1) or pos1 == 'NA' or pd.isna(pos2) or pos2 == 'NA':
-                    svLength = 'NA'
-                elif pos2 > pos1:
+                    svLength = pd.NA
+                elif int(pos2) > int(pos1):
                     svLength = float(pos2) - float(pos1) + 1
                 else:
                     svLength = float(pos1) - float(pos2) + 1
