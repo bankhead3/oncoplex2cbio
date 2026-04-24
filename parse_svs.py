@@ -25,10 +25,78 @@ def parse(fileDict,outDir,sample,version,pipeline,overwrite=False):
 
         if pipeline == 'TGC2' and version in ['V7','V8']:
             tmp = parseExcelv8(fileDict, 'interGeneSvsFeather', sample, out1, header)
+        elif pipeline == 'TGC' and version in ['V5','V6','V7']:
+            tmp = parseTxt(fileDict, 'svAnalysisTxt', sample, out1, header)
+            tmp = parseTxt(fileDict, 'breakDancerTxt', sample, out1, header)
         else:
-            print('i no understant cnvs for ' + pipeline + ' ' + version)
+            print('i no understant svs for ' + pipeline + ' ' + version)
             raise
     print('...svs:parsed',end='')
+
+
+# *** parse clinically flagged feather ***
+def parseTxt(fileDict, fileType, sample, out1, header):
+
+    #print('')
+    #print(header)
+
+    #print(fileDict[fileType])
+    
+    with open(fileDict[fileType]) as in1:
+        inHeader = in1.readline()
+        inHeader = inHeader.strip().split()
+
+        for line in in1:
+            parse1 = line.split('\t')
+
+            assert len(inHeader) == len(parse1)
+            lineDict = dict(zip(inHeader,parse1))
+
+            record = {'sample':sample}
+
+            # multiple flavors of TGC SV_Analysis :(
+            if 'Gene_1' in lineDict:
+                record['gene1'],record['gene2'] = lineDict['Gene_1'],lineDict['Gene_2']
+                record['chrom1'],record['pos1'] = lineDict['Event_1'].split(':')
+                record['chrom1'] = 'chr' + record['chrom1']
+                record['chrom2'],record['pos2'] = lineDict['Event_2'].split(':')
+                record['chrom2'] = 'chr' + record['chrom2']
+            elif 'Gene1' in lineDict:
+                record['gene1'],record['gene2'] = lineDict['Gene1'],lineDict['Gene2']
+                record['chrom1'],record['pos1'] = lineDict['Event1'].split(':')
+
+                # on occasion Event2 is blank :(
+                if lineDict['Event2'] == '':
+                    record['chrom2'],record['pos2'] = 'NA','NA'
+                else:
+                    record['chrom2'],record['pos2'] = lineDict['Event2'].split(':')
+            else:
+                raise 'i no undersetand sv file format'
+                
+            record['reference'] = 'GRCh37'
+
+            # ** fill in the values that we don't have for TGC ** 
+            if fileType == 'svAnalysisTxt':
+                record['caller'] = 'Crest'
+                record['eventType'] = record['group'] = record['filter'] = record['filterRealVariant'] = record['isMitelman'] = record['isQuiver'] = record['score'] = record['VAF'] = record['AD'] = record['DP'] = 'NA'                
+            elif fileType == 'breakDancerTxt':
+                record['caller'] = 'breakDancer'
+                record['group'] = record['filter'] = record['filterRealVariant'] = record['isMitelman'] = record['isQuiver'] = record['score'] = record['VAF'] = record['AD'] = record['DP'] = 'NA'
+                record['eventType'] = lineDict['Type']
+            else:
+                raise 'i no understand caller'
+
+            record['id'] = '__'.join([record['sample'],record['gene1'],record['gene2']])
+            record['location'] = '_'.join([record['chrom1'],record['pos1'],record['chrom2'],record['pos2']])
+
+#            print(record['caller'])
+            
+            # write it yo
+            lineOut = []
+            for field in header:
+                lineOut.append(str(record[field]))
+            lineOut = ['NA' if field == '' else field for field in lineOut]
+            out1.write('\t'.join(lineOut) + '\n')
 
 # *** parse clinically flagged feather ***
 def parseExcelv8(fileDict, fileType, sample, out1, header):
@@ -98,5 +166,6 @@ def parseExcelv8(fileDict, fileType, sample, out1, header):
         lineOut = []
         for field in header:
             lineOut.append(str(record[field]))
+        lineOut = ['NA' if field == '' else field for field in lineOut]
         out1.write('\t'.join(lineOut) + '\n')
 

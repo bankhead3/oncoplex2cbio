@@ -26,10 +26,41 @@ def parse(fileDict,outDir,sample,version,pipeline,overwrite=False):
 
         if pipeline == 'TGC2' and version in ['V7','V8']:
             tmp = parseExcelv8(fileDict, 'excel', sample, out1, header)
+        elif pipeline == 'TGC' and version in ['V5','V6','V7']:
+            tmp = parseTxt(fileDict, 'cnvGeneTxt', sample, out1, header)
         else:
             print('i no understant cnvs for ' + pipeline + ' ' + version)
             raise
     print('...cnvs:parsed',end='')
+
+# *** parse cnvGeneTxt file ***
+def parseTxt(fileDict, fileType, sample, out1, header):
+    
+    with open(fileDict[fileType]) as in1:
+        inHeader = in1.readline()
+        inHeader = inHeader.strip().split('\t')
+
+        for line in in1:
+            parse1 = line.split('\t')
+            parse1 = [field.strip() for field in parse1]
+
+            assert len(inHeader) == len(parse1)
+            lineDict = dict(zip(inHeader,parse1))
+
+            record = {'sample':sample}
+            record['gene'] = lineDict['Gene']
+            record['avgLogRatio'] = lineDict['Ave_Adjusted_Log_Ratio']
+
+            # write yo line out yo
+            lineOut = []
+            for field in header:
+                if field in record:
+                    lineOut.append(str(record[field]))
+                else:
+                    lineOut.append('NA')
+            lineOut = ['NA' if field == '' else field for field in lineOut]
+            out1.write('\t'.join(lineOut) + '\n')
+            # **
 
 # *** parse clinically flagged feather ***
 def parseExcelv8(fileDict, fileType, sample, out1, header):

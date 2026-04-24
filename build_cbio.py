@@ -143,11 +143,11 @@ def writeMetaDatas(inFile,outDir):
             lineDict = dict(zip(properties,values))
             lineDict['patientId'] = list(groupDf['patientId'])[0]
             lineDict['sample'] = name
-
+            
             # assemble and writ yo line out
             lineOut = []
             for field in ['patientId','sample'] + properties:
-                lineOut.append(lineDict[field])
+                lineOut.append(str(lineDict[field]))
             out1.write('\t'.join(lineOut) + '\n')
     # ***
     
@@ -195,11 +195,11 @@ def writeMutations(inFile,outDir):
 
 # ***    
 
-# *** write svs file ***
+# *** write svsfile ***
 def writeSvs(inFile,outDir):
     
     outFile = outDir + 'data_sv.txt'
-    df1 = pd.read_csv(inFile,sep="\t")
+    df1 = pd.read_csv(inFile,sep="\t",low_memory=False)
 
     with open(outFile,'w') as out1:
 
@@ -296,9 +296,15 @@ def writeMetas(inFile,outDir):
             writeMeta(group,df1,outFile)
         elif group == 'panel':
             outFile = outDir + 'meta_gene_panel_matrix.txt'
-            writeMeta(group,df1,outFile)        
+            writeMeta(group,df1,outFile)
+        elif group == 'cancerType1':
+            outFile = outDir + 'meta_cancer_type.txt'
+            writeMeta(group,df1,outFile)
+        elif group in ['cancerType2','cancerType3']:
+            outFile = outDir + 'cancer_type.txt'            
+            writeData(group,df1,outFile)        
         else:
-            raise 'i no understand'
+            raise 'i no understand group'
 # ***
             
 # *** write metafile ***
@@ -310,4 +316,21 @@ def writeMeta(group,df1,file):
             if lineDict['group'] == group:
                 lineOut = lineDict['parameter'] + ': ' + lineDict['value']
                 out1.write(lineOut + '\n')
+# ***
+
+# *** write datafile for custom cancer type ***
+def writeData(group,df1,file):
+
+    param = 'w'
+    if group != 'cancerType2':
+        param = 'a'
+    
+    with open(file,param) as out1:
+        lineOut = []
+        for idx,row in df1.iterrows():
+            lineDict = row.to_dict()
+
+            if lineDict['group'] == group:
+                lineOut.append(lineDict['value'])
+        out1.write('\t'.join(lineOut) + '\n')
 # ***
