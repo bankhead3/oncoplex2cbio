@@ -7,10 +7,10 @@ import pandas as pd
 
 inFile1 = 'oncoplex2cbio/annotation/oncoplex-genes.txt'
 df = pd.read_csv(inFile1,sep="\t")
-genes = list(df['gene'])
-genes = dict(zip(genes,genes))
-genesX = list(df[(df['chrom'] == 'chrX')]['gene'])
-genesX = dict(zip(genesX,genesX))
+panelGenes = list(df['gene'])
+panelGenes = dict(zip(panelGenes,panelGenes))
+panelGenesX = list(df[(df['chrom'] == 'chrX')]['gene'])
+panelGenesX = dict(zip(panelGenesX,panelGenesX))
 chroms = ['chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX','chrMT','chrM','chrY']
 
 # *** process ***
@@ -30,31 +30,49 @@ def process(inFile,outFile,pipeline,overwrite = True):
         if not os.path.exists(outDir):
             os.makedirs(outDir, exist_ok=True)
 
-        consequences = ["coding", "frameshift", "inframe", "missense", "splicing-canonical", "start/stop",'frameshift deletion','frameshift insertion','nonframeshift deletion','nonsynonymous SNV','splicing','nonframeshift insertion']
+        consequences = ["coding", "frameshift", "inframe", "missense", "splicing-canonical", "start/stop",'frameshift deletion','frameshift insertion','nonframeshift deletion','nonsynonymous SNV','splicing','nonframeshift insertion','stopgain','splicing-other']
 
-            
         # read variant file
         df1 = pd.read_csv(inFile,sep="\t",keep_default_na = False)
         # ** filtering criteria **
 
+        # ** need to make this fasters - is slooowwww.....
+        # ** update gene column to only include unique gene names that are on inoncoplex **
+        for idx,row in df1.iterrows():
+            rowDict = row.to_dict()
+
+            gene = rowDict['gene']
+            if ',' in gene:
+                candidateGenes = gene.split(',')
+
+                candidateGene = list(set([gene for gene in candidateGenes if gene in panelGenes]))
+#                print(candidateGenes)
+#                print(candidateGene)
+                assert len(candidateGene) in [0,1]
+                candidateGene = 'NA' if len(candidateGene) == 0 else candidateGene[0]
+                df1.loc[idx,'gene'] = candidateGene
+        # **
+        
         if pipeline == 'TGC2':
             idx0 = (df1['sheet'] == 'smallVariants')
 
-            idx1 = (df1['humanFreq'] == 'NA') | (pd.to_numeric(df1['humanFreq'],errors='coerce') < 0.001)
+            idx1 = (df1['humanFreq'] == 'NA') | (pd.to_numeric(df1['humanFreq'],errors='coerce') < 0.01)
 
             idx2 = (pd.to_numeric(df1['uwFreq'],errors='coerce') < 0.05)  # intwernal frequency database        
 
             idx3 = (df1['consequence'].isin(consequences))
             idx4 = (~df1['clinvar'].str.contains('benign',case = False))
-            idx5 = (pd.to_numeric(df1['VAF'],errors='coerce') > 0.03)
+            idx5 = (pd.to_numeric(df1['VAF'],errors='coerce') >= 0.03)
             idx6 = (df1['filterRealVariant'] == True)
-            idx10 = (pd.to_numeric(df1['AD'],errors='coerce') > 12)  
+            idx10 = (pd.to_numeric(df1['AD'],errors='coerce') >= 12)  
             # **
         
             idx7 = (df1['sheet'] == 'clinicallyFlagged') & (df1['clinvar'].str.contains('pathogenic',case=False)) & (~df1['clinvar'].str.contains('conflicting',case=False))
             idx8 = (pd.to_numeric(df1['AD'],errors='coerce') > 12)  # was 5 based on macro filters
             idx9 = (pd.to_numeric(df1['uwFreq'],errors='coerce') < 0.1)  # based on most frequent mutations in cancer ~5%
-            df1a = df1[(idx0 & idx1 & idx2 & idx3 & idx4 & idx5 & idx6 & idx10) | (idx5 & idx7 & idx8 & idx9)].copy()
+
+            idx11 = (df1['gene'] != 'NA')  # guard against genes not officially on the panel
+            df1a = df1[(idx0 & idx1 & idx2 & idx3 & idx4 & idx5 & idx6 & idx10 & idx11) | (idx5 & idx7 & idx8 & idx9 & idx11)].copy()
     
             # get rid of duplicates from small variants and clinically flagged
             df1b = df1a.drop_duplicates(subset=['id'],keep = 'first')
@@ -63,19 +81,24 @@ def process(inFile,outFile,pipeline,overwrite = True):
         # different filtering for older pipelines
         elif pipeline == 'TGC':
             idx0 = (df1['sheet'] == 'snpAnalysisTxt')
-            idx1 = (df1['humanFreq'] == 'NA') | (pd.to_numeric(df1['humanFreq'],errors='coerce') < 0.001)
+            # changed from 0.001 to 0.01 based on definition of a snp and variants mentioned in reports
+            idx1 = (df1['humanFreq'] == 'NA') | (pd.to_numeric(df1['humanFreq'],errors='coerce') < 0.01)
 
             idx2 = (df1['uwFreq'] == 'NA') | (pd.to_numeric(df1['uwFreq'],errors='coerce') < 0.05)  # internal frequency database
 
             # look for matches to consequence list
             regex = '|'.join(map(re.escape,consequences))
             idx3 = (df1['consequence'].str.contains(regex,na=False))
-
+            
             idx4 = (~df1['clinvar'].str.contains('benign',case = False))
-            idx5 = (df1['VAF'] == 'NA') | (pd.to_numeric(df1['VAF'],errors='coerce') > 0.03)
-            idx10 = (pd.to_numeric(df1['AD'],errors='coerce') > 12)  
+            idx5 = (df1['VAF'] == 'NA') | (pd.to_numeric(df1['VAF'],errors='coerce') >= 0.03)
+            
+            # updated from 12 to 7 based on what is reported
+            idx10 = (pd.to_numeric(df1['AD'],errors='coerce') >= 7)
+            idx11 = (df1['gene'] != 'NA')  # guard against genes not officially on the panel            
+            df1a = df1[(idx0 & idx1 & idx2 & idx3 & idx4 & idx5 & idx10 & idx11)].copy()
 
-            df1a = df1[(idx0 & idx1 & idx2 & idx3 & idx4 & idx5 & idx10)].copy()
+#            print(df1a['gene'])
             
             # get rid of duplicates from small variants and clinically flagged
             df1b = df1a.drop_duplicates(subset=['id'],keep = 'first')
@@ -177,7 +200,7 @@ def process(inFile,outFile,pipeline,overwrite = True):
         # **
         elif pipeline == 'TGC':
             idx1 = (df1['chrom1'].isin(chroms)) & (df1['chrom2'].isin(chroms))
-            idx2 = (df1['gene1'].isin(genes)) | (df1['gene2'].isin(genes))
+            idx2 = (df1['gene1'].isin(panelGenes)) | (df1['gene2'].isin(panelGenes))
             idx3 = (df1['gene1'] != df1['gene2'])
 
             df1a = df1[idx1 & idx2 & idx3].copy()
