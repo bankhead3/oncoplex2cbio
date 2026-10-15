@@ -36,6 +36,9 @@ def process(inFile,outFile,pipeline,overwrite = True):
         df1 = pd.read_csv(inFile,sep="\t",keep_default_na = False)
         # ** filtering criteria **
 
+        df1['variantType'] = 'NA'
+
+        
         # ** need to make this fasters - is slooowwww.....
         # ** update gene column to only include unique gene names that are on inoncoplex **
         for idx,row in df1.iterrows():
@@ -51,8 +54,27 @@ def process(inFile,outFile,pipeline,overwrite = True):
                 assert len(candidateGene) in [0,1]
                 candidateGene = 'NA' if len(candidateGene) == 0 else candidateGene[0]
                 df1.loc[idx,'gene'] = candidateGene
-        # **
-        
+
+            # assign variantType
+            varType = 'NA'
+            ref,alt = rowDict['ref'],rowDict['alt']
+            if ref == '-':
+                varType = 'INS'
+            elif alt == '-':
+                varType = 'DEL'
+            elif len(ref) == 1 and len(alt) == 1:
+                varType = 'SNP'
+            elif len(ref) == 2 and len(alt) == 2:
+                varType = 'DNP'
+            elif len(ref) == 3 and len(alt) == 3:
+                varType = 'TNP'
+            elif len(ref) == len(alt) and len(ref) > 3:
+                varType = 'ONP'
+            else:
+                varType = 'NA'
+            df1.loc[idx,'variantType'] = varType
+            # **
+            
         if pipeline == 'TGC2':
             idx0 = (df1['sheet'] == 'smallVariants')
 
@@ -186,14 +208,17 @@ def process(inFile,outFile,pipeline,overwrite = True):
         df1 = pd.read_csv(inFile,sep="\t",keep_default_na = False,na_values = ['NA','nan'])
         df1['svLength'] = -1
 
+        # frequent false positive
+        idx6 = (~df1['id'].str.contains('LINC00486'))
+        
         if pipeline == 'TGC2':
             # ** filtering criteria **
-            idx1 = (df1['VAF'] > 0.008)
-            idx2 = (df1['score'] > 1500) | ((df1['score'] > 400) & (df1['isQuiver'] | df1['isMitelman']))
+            idx1 = (df1['VAF'] >= 0.005) # was 0.008
+            idx2 = (df1['score'] > 1500) | ((df1['score'] > 200) & (df1['isQuiver'] | df1['isMitelman']))  # was score>400 for second term
             idx3 = (df1['filterRealVariant'] == True)
             # group 0 are consider more likely to be FP by dlmp
             idx4 = ((df1['group'] == 0) & (df1['isQuiver'] | df1['isMitelman'] | ~df1['id'].str.contains('Intergenic'))) | (df1['group'] != 0)
-            df1a = df1[idx1 & idx2 & idx3 & idx4].copy()
+            df1a = df1[idx1 & idx2 & idx3 & idx4 & idx6].copy()
 
             df1a = df1a.reset_index(drop = True)
 
@@ -202,8 +227,10 @@ def process(inFile,outFile,pipeline,overwrite = True):
             idx1 = (df1['chrom1'].isin(chroms)) & (df1['chrom2'].isin(chroms))
             idx2 = (df1['gene1'].isin(panelGenes)) | (df1['gene2'].isin(panelGenes))
             idx3 = (df1['gene1'] != df1['gene2'])
+            idx4 = (~df1['id'].str.contains('Intergenic'))  # newly added too many
+            idx5 = (df1['gene1'].str[:4] != df1['gene2'].str[:4])  # guard against within family fusions
 
-            df1a = df1[idx1 & idx2 & idx3].copy()
+            df1a = df1[idx1 & idx2 & idx3 & idx4 & idx5 & idx6].copy()
             df1a = df1a.reset_index(drop = True)
 
         # ** add svLength **

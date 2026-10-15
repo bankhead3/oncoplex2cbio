@@ -43,12 +43,12 @@ def writePanel(fileDict,outDir):
 
     outFile = outDir + '/data_gene_panel_matrix.txt'
     with open(outFile,'w') as out1:
-        header = ['SAMPLE_ID','mutations']
+        header = ['SAMPLE_ID','mutations','structural_variants']
         out1.write('\t'.join(header) + '\n')
 
         # for each sample
         for sample in samples:
-            lineOut = [str(sample),panel]
+            lineOut = [str(sample),panel,panel]
             out1.write('\t'.join(lineOut) + '\n')
     
 # *** write case list files ***
@@ -161,7 +161,7 @@ def writeMutations(inFile,outDir):
         header = header.strip().split('\t')
 
         # ** write out header **
-        outHeader = ['Hugo_Symbol','NCBI_Build','Chromosome','Start_Position','End_Position','Variant_Classification','Reference_Allele','Tumor_Seq_Allele2','Tumor_Sample_Barcode','HGVSp_Short','t_alt_count','t_ref_count']
+        outHeader = ['Hugo_Symbol','NCBI_Build','Chromosome','Start_Position','End_Position','Variant_Classification','Variant_Type','RefSeq','Reference_Allele','Tumor_Seq_Allele2','Tumor_Sample_Barcode','HGVSp_Short','HGVSc','t_alt_count','t_ref_count']
         out1.write('\t'.join(outHeader) + '\n')
         
         for line in in1:
@@ -185,6 +185,8 @@ def writeMutations(inFile,outDir):
             record['Hugo_Symbol'] = lineDict['gene']
             record['NCBI_Build'] = lineDict['reference']  # this needs to be added to the mutation file for confirmatory purposes.
             record['Variant_Classification'] = lineDict['consequence']
+            record['Variant_Type'] = lineDict['variantType']
+            record['RefSeq'] = lineDict['transcript']                        
 
             # ** write yo output **
             lineOut = []

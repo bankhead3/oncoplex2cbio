@@ -181,7 +181,7 @@ def parseClinicallyFlaggedFeather(fileDict, fileType, sample, out1, header):
         
         record['ref'],record['alt'] = rowDict['ref'],rowDict['alt']
         record['gene'],record['transcript'] = rowDict['Gene'].replace('"',''),re.sub('[:].*','',rowDict['HGVSc'])
-                
+
         record['mutationID'] = '_'.join([record['chrom'],record['pos'],record['ref'],record['alt']])
         record['hgvsP'],record['hgvsC'] = rowDict['HGVSp'],re.sub('.*[:]','',rowDict['HGVSc'])
         
